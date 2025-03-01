@@ -598,12 +598,18 @@ configure_gnss(){
             # echo "Could not get LC29H version string after rebooting the module, try power cycling the module."
             # return 1
           # fi
+          echo 'A'
           sudo -u "${RTKBASE_USER}" sed -i s/^receiver_firmware=.*/receiver_firmware=\'${firmware}\'/ "${rtkbase_path}"/settings.conf && \
+          echo 'D'
           sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'921600:8:n:1\'/ "${rtkbase_path}"/settings.conf && \
+          echo 'Z'
           sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Quectel LC29H\'/ "${rtkbase_path}"/settings.conf && \
+          echo 'X'
           sudo -u "${RTKBASE_USER}" sed -i s/^receiver_format=.*/receiver_format=\'rtcm3\'/ "${rtkbase_path}"/settings.conf
+          echo 'C'
           #UM980 archives a bigger, we need more remaining space to compress archives
           sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
+          echo 'B'
 
           return $?
         else
