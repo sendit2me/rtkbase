@@ -581,6 +581,7 @@ configure_gnss(){
             sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
 
             return $?
+          fi
           elif [[ $(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 2>/dev/null) =~ 'LC29H' ]]; then
             # Factory reset and configure the module
             python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Factory_Defaults.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
