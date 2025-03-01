@@ -8,8 +8,8 @@
 BASEDIR="$(dirname "$0")"
 source <( grep -v '^#' "${BASEDIR}"/settings.conf | grep '=' ) #import settings
 
-if [[ "${receiver}" = "Quectel LC29HBS" ]]; then
+if [[ "${receiver}" = "Quectel LC29H" ]]; then
   speed="${com_port_settings%%:*}"
-  python3 "${BASEDIR}"/tools/nmea.py --file "${BASEDIR}"/receiver_cfg/LC29HBS_Configure.txt /dev/"${com_port}" "${speed}" 3
-  echo Configuring Quectel LC29HBS on /dev/"${com_port}" at speed "${speed}"
+  python3 "${BASEDIR}"/tools/nmea.py --file "${BASEDIR}"/receiver_cfg/LC29H_Configure.txt /dev/"${com_port}" "${speed}" 3
+  echo Configuring Quectel LC29H on /dev/"${com_port}" at speed "${speed}"
 fi
