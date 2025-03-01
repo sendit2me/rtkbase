@@ -388,36 +388,36 @@ detect_gnss() {
       #This function try to detect a gnss receiver and write the port/format inside settings.conf
       #If the receiver is a U-Blox, it will add the TADJ=1 option on all ntrip/rtcm outputs.
       #If there are several receiver, the last one detected will be add to settings.conf.
-      for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
-          ID_SERIAL=''
-          syspath="${sysdevpath%/dev}"
-          devname="$(udevadm info -q name -p "${syspath}")"
-          if [[ "$devname" == "bus/"* ]]; then continue; fi
-          eval "$(udevadm info -q property --export -p "${syspath}")"
-          if [[ -z "$ID_SERIAL" ]]; then continue; fi
-          if [[ "$ID_SERIAL" =~ (u-blox|skytraq|Septentrio) ]]
-          then
-            detected_gnss[0]=$devname
-            detected_gnss[1]=$ID_SERIAL
-            #echo '/dev/'"${detected_gnss[0]}" ' - ' "${detected_gnss[1]}"
-            # If /dev/ttyGNSS is a symlink of the detected serial port, we've found the gnss receiver, break the loop.
-            # This test is useful with gnss receiver offering several serial ports (like mosaic X5). The Udev rule should symlink the right one with ttyGNSS
-            [[ '/dev/ttyGNSS' -ef '/dev/'"${detected_gnss[0]}" ]] && break
-          fi
-      done
-      if [[ ${#detected_gnss[*]} -ne 2 ]]; then
-          vendor_and_product_ids=$(lsusb | grep -i "u-blox\|Septentrio" | grep -Eo "[0-9A-Za-z]+:[0-9A-Za-z]+")
-          if [[ -z "$vendor_and_product_ids" ]]; then 
-            echo 'NO USB GNSS RECEIVER DETECTED'
-            echo 'YOU CAN REDETECT IT FROM THE WEB UI'
-            #return 1
-          else
-            devname=$(_get_device_path "$vendor_and_product_ids")
-            detected_gnss[0]=$devname
-            detected_gnss[1]='u-blox'
-            #echo '/dev/'${detected_gnss[0]} ' - ' ${detected_gnss[1]}
-          fi
-      fi
+      # for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
+      #     ID_SERIAL=''
+      #     syspath="${sysdevpath%/dev}"
+      #     devname="$(udevadm info -q name -p "${syspath}")"
+      #     if [[ "$devname" == "bus/"* ]]; then continue; fi
+      #     eval "$(udevadm info -q property --export -p "${syspath}")"
+      #     if [[ -z "$ID_SERIAL" ]]; then continue; fi
+      #     if [[ "$ID_SERIAL" =~ (u-blox|skytraq|Septentrio) ]]
+      #     then
+      #       detected_gnss[0]=$devname
+      #       detected_gnss[1]=$ID_SERIAL
+      #       #echo '/dev/'"${detected_gnss[0]}" ' - ' "${detected_gnss[1]}"
+      #       # If /dev/ttyGNSS is a symlink of the detected serial port, we've found the gnss receiver, break the loop.
+      #       # This test is useful with gnss receiver offering several serial ports (like mosaic X5). The Udev rule should symlink the right one with ttyGNSS
+      #       [[ '/dev/ttyGNSS' -ef '/dev/'"${detected_gnss[0]}" ]] && break
+      #     fi
+      # done
+      # if [[ ${#detected_gnss[*]} -ne 2 ]]; then
+      #     vendor_and_product_ids=$(lsusb | grep -i "u-blox\|Septentrio" | grep -Eo "[0-9A-Za-z]+:[0-9A-Za-z]+")
+      #     if [[ -z "$vendor_and_product_ids" ]]; then 
+      #       echo 'NO USB GNSS RECEIVER DETECTED'
+      #       echo 'YOU CAN REDETECT IT FROM THE WEB UI'
+      #       #return 1
+      #     else
+      #       devname=$(_get_device_path "$vendor_and_product_ids")
+      #       detected_gnss[0]=$devname
+      #       detected_gnss[1]='u-blox'
+      #       #echo '/dev/'${detected_gnss[0]} ' - ' ${detected_gnss[1]}
+      #     fi
+      # fi
     # detection on uart port
       if [[ ${#detected_gnss[*]} -ne 2 ]]; then
         echo '################################'
@@ -428,26 +428,27 @@ detect_gnss() {
         for port in ttyS0 ttyUSB0 ttyUSB1 ttyUSB2 serial0 ttyS1 ttyS2 ttyS3 ttyS4 ttyS5; do
             for port_speed in 460800 115200 57600 38400 19200 9600; do
                 echo 'DETECTION ON ' $port ' at ' $port_speed
-                if [[ $(python3 "${rtkbase_path}"/tools/ubxtool -f /dev/$port -s $port_speed -p MON-VER -w 5 2>/dev/null) =~ 'ZED-F9P' ]]; then
-                    detected_gnss[0]=$port
-                    detected_gnss[1]='u-blox'
-                    detected_gnss[2]=$port_speed
-                    #echo 'U-blox ZED-F9P DETECTED ON '$port $port_speed
-                    break
-                elif { model=$(python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/$port --baudrate $port_speed --command get_model 2>/dev/null) ; [[ "${model}" == 'UM98'[0-2] ]] ;}; then
-                    detected_gnss[0]=$port
-                    detected_gnss[1]='unicore'
-                    detected_gnss[2]=$port_speed
-                    #echo 'Unicore ' "${model}" ' DETECTED ON '$port $port_speed
-                    break
-                fi
+                # if [[ $(python3 "${rtkbase_path}"/tools/ubxtool -f /dev/$port -s $port_speed -p MON-VER -w 5 2>/dev/null) =~ 'ZED-F9P' ]]; then
+                #     detected_gnss[0]=$port
+                #     detected_gnss[1]='u-blox'
+                #     detected_gnss[2]=$port_speed
+                #     #echo 'U-blox ZED-F9P DETECTED ON '$port $port_speed
+                #     break
+                # elif { model=$(python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/$port --baudrate $port_speed --command get_model 2>/dev/null) ; [[ "${model}" == 'UM98'[0-2] ]] ;}; then
+                #     detected_gnss[0]=$port
+                #     detected_gnss[1]='unicore'
+                #     detected_gnss[2]=$port_speed
+                #     #echo 'Unicore ' "${model}" ' DETECTED ON '$port $port_speed
+                #     break
+                # fi
 
-                # Detect Quectel LC29H-BS receivers using nmea.py
+                # Detect Quectel LC29H receivers using nmea.py
+                echo "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/$port $port_speed 3
                 if [[ $(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/$port $port_speed 3 2>/dev/null) =~ 'LC29H' ]]; then
                     detected_gnss[0]=$port
-                    detected_gnss[1]='LC29H-BS'
+                    detected_gnss[1]='LC29H'
                     detected_gnss[2]=$port_speed
-                    #echo 'Quectel LC29H-BS DETECTED ON ' $port ' at ' $port_speed
+                    #echo 'Quectel LC29H DETECTED ON ' $port ' at ' $port_speed
                     break
                 fi
                 sleep 1
