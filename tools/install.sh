@@ -603,7 +603,7 @@ configure_gnss(){
           echo 'D'
           sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'921600:8:n:1\'/ "${rtkbase_path}"/settings.conf && \
           echo 'Z'
-          sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Quectel LC29H\'/ "${rtkbase_path}"/settings.conf && \
+          sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'QuectelLC29H\'/ "${rtkbase_path}"/settings.conf && \
           echo 'X'
           sudo -u "${RTKBASE_USER}" sed -i s/^receiver_format=.*/receiver_format=\'rtcm3\'/ "${rtkbase_path}"/settings.conf
           echo 'C'
