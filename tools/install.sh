@@ -479,7 +479,7 @@ detect_gnss() {
       elif [[ "${detected_gnss[1]}" =~ 'LC29H' ]]
         then
           #get LC29H firmware release
-          detected_gnss[3]="LC29HXXNR##X#X_RSA,YYYY/MM/DD,HH:mm:SS"
+          detected_gnss[3]="LC29HXX"
       fi
       # "send" result
       echo '/dev/'"${detected_gnss[0]}" ' - ' "${detected_gnss[1]}"' - ' "${detected_gnss[2]}"' - ' "${detected_gnss[3]}"
@@ -590,12 +590,13 @@ configure_gnss(){
 
             # Speed has now been configured to 921600
             speed=921600
-            version_str="$(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${speed} 3 2>/dev/null)"
-            firmware="`echo "$version_str" | cut -d , -f 2`"
-            if [[ -z "$version_str" ]]; then
-              echo "Could not get LC29H version string after rebooting the module, try power cycling the module."
-              return 1
-            fi
+            firmware="LC29HXX"
+            # version_str="$(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${speed} 3 2>/dev/null)"
+            # firmware="`echo "$version_str" | cut -d , -f 2`"
+            # if [[ -z "$version_str" ]]; then
+              # echo "Could not get LC29H version string after rebooting the module, try power cycling the module."
+              # return 1
+            # fi
             sudo -u "${RTKBASE_USER}" sed -i s/^receiver_firmware=.*/receiver_firmware=\'${firmware}\'/ "${rtkbase_path}"/settings.conf && \
             sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'921600:8:n:1\'/ "${rtkbase_path}"/settings.conf && \
             sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Quectel LC29H\'/ "${rtkbase_path}"/settings.conf && \
