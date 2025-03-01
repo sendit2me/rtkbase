@@ -426,7 +426,7 @@ detect_gnss() {
         systemctl is-active --quiet str2str_tcp.service && sudo systemctl stop str2str_tcp.service && echo 'Stopping str2str_tcp service'
         # TODO remove port if not available in /dev/
         for port in ttyS0 ttyUSB0 ttyUSB1 ttyUSB2 serial0 ttyS1 ttyS2 ttyS3 ttyS4 ttyS5; do
-            for port_speed in 460800 115200 57600 38400 19200 9600; do
+            for port_speed in 921600 460800 115200 57600 38400 19200 9600; do
                 echo 'DETECTION ON ' $port ' at ' $port_speed
                 # if [[ $(python3 "${rtkbase_path}"/tools/ubxtool -f /dev/$port -s $port_speed -p MON-VER -w 5 2>/dev/null) =~ 'ZED-F9P' ]]; then
                 #     detected_gnss[0]=$port
@@ -448,6 +448,7 @@ detect_gnss() {
                     detected_gnss[0]=$port
                     detected_gnss[1]='LC29H'
                     detected_gnss[2]=$port_speed
+                    
                     #echo 'Quectel LC29H DETECTED ON ' $port ' at ' $port_speed
                     break
                 fi
@@ -475,6 +476,10 @@ detect_gnss() {
         then
           #get Unicore UM98X firmware release
           detected_gnss[3]="$(python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/"${detected_gnss[0]}" --baudrate ${detected_gnss[2]} --command get_firmware 2>/dev/null)" || firmware='?'
+      elif [[ "${detected_gnss[1]}" =~ 'LC29H' ]]
+        then
+          #get LC29H firmware release
+          detected_gnss[3]="LC29HXXNR##X#X_RSA,YYYY/MM/DD,HH:mm:SS"
       fi
       # "send" result
       echo '/dev/'"${detected_gnss[0]}" ' - ' "${detected_gnss[1]}"' - ' "${detected_gnss[2]}"' - ' "${detected_gnss[3]}"
