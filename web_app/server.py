@@ -673,9 +673,10 @@ def configure_receiver(brand="", model=""):
         restart_main = False
 
     print("configuring {} gnss receiver model {}".format(brand, model))
+    print(f"rtkbase_path:{rtkbase_path} user: {rtkbaseconfig.get("general", "user")}") 
     answer = subprocess.run([os.path.join(rtkbase_path, "tools", "install.sh"), "--user", rtkbaseconfig.get("general", "user"), "--configure-gnss"], encoding="UTF-8", stderr=subprocess.PIPE, stdout=subprocess.PIPE, check=False)
-    #print("DEBUG - stdout: ", answer.stdout)
-    #print("DEBUG - returncode: ", answer.returncode)
+    print("DEBUG - stdout: ", answer.stdout)
+    print("DEBUG - returncode: ", answer.returncode)
 
     if answer.returncode == 0: # and "Done" in answer.stdout:
         result = {"result" : "success"}
