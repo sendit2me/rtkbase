@@ -426,7 +426,7 @@ detect_gnss() {
         systemctl is-active --quiet str2str_tcp.service && sudo systemctl stop str2str_tcp.service && echo 'Stopping str2str_tcp service'
         # TODO remove port if not available in /dev/
         for port in ttyS0 ttyUSB0 ttyUSB1 ttyUSB2 serial0 ttyS1 ttyS2 ttyS3 ttyS4 ttyS5; do
-            for port_speed in 115200 57600 38400 19200 9600; do
+            for port_speed in 460800 115200 57600 38400 19200 9600; do
                 echo 'DETECTION ON ' $port ' at ' $port_speed
                 if [[ $(python3 "${rtkbase_path}"/tools/ubxtool -f /dev/$port -s $port_speed -p MON-VER -w 5 2>/dev/null) =~ 'ZED-F9P' ]]; then
                     detected_gnss[0]=$port
@@ -441,7 +441,16 @@ detect_gnss() {
                     #echo 'Unicore ' "${model}" ' DETECTED ON '$port $port_speed
                     break
                 fi
-                sleep 0.1
+
+                # Detect Quectel LC29H-BS receivers using nmea.py
+                if [[ $(python3 "${rtkbase_path}"/tools/nmea.py --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Version.txt /dev/$port $port_speed 3 2>/dev/null) =~ 'LC29HBS' ]]; then
+                    detected_gnss[0]=$port
+                    detected_gnss[1]='LC29H-BS'
+                    detected_gnss[2]=$port_speed
+                    #echo 'Quectel LC29H-BS DETECTED ON ' $port ' at ' $port_speed
+                    break
+                fi
+                sleep 1
             done
             #exit loop if a receiver is detected
             [[ ${#detected_gnss[*]} -eq 3 ]] && break
@@ -566,25 +575,24 @@ configure_gnss(){
             sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
 
             return $?
-          fi
+          elif [[ $(python3 "${rtkbase_path}"/tools/nmea.py --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Version.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 2>/dev/null) =~ 'LC29HBS' ]]; then
+            # Factory reset and configure the module
+            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Factory_Defaults.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29HBS_Configure.log && \
+            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Set_Baud.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29HBS_Configure.log && \
+            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Save.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29HBS_Configure.log && \
+            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Reboot.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29HBS_Configure.log && \
 
-        elif { model=$(python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/${com_port} --baudrate ${com_port_settings%%:*} --command get_model 2>/dev/null) ; [[ "${model}" == 'UM98'[0-2] ]] ;}
-          then
-          #get UM98x firmware release
-          firmware="$(python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/${com_port} --baudrate ${com_port_settings%%:*} --command get_firmware 2>/dev/null)" || firmware='?'
-          echo 'Unicore-' "${model}" 'Firmware: ' "${firmware}"
-          sudo -u "${RTKBASE_USER}" sed -i s/^receiver_firmware=.*/receiver_firmware=\'${firmware}\'/ "${rtkbase_path}"/settings.conf
-          #configure the UM980/UM982 for RTKBase
-          echo 'Resetting the ' "${model}" ' settings....'
-          python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/${com_port} --baudrate ${com_port_settings%%:*} --command reset --retry 5
-          sleep_time=10 ; echo 'Waiting '$sleep_time's for ' "${model}" ' reboot' ; sleep $sleep_time
-          echo 'Sending settings....'
-          python3 "${rtkbase_path}"/tools/unicore_tool.py --port /dev/${com_port} --baudrate ${com_port_settings%%:*} --command send_config_file "${rtkbase_path}"/receiver_cfg/Unicore_"${model}"_rtcm3.cfg --store --retry 2
-          if [[ $? -eq  0 ]]
-          then
-            echo 'Unicore UM980 successfuly configured'
-            sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'115200:8:n:1\'/ "${rtkbase_path}"/settings.conf                        && \
-            sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Unicore_$model\'/ "${rtkbase_path}"/settings.conf                                         && \
+            # Speed has now been configured to 921600
+            speed=921600
+            version_str="$(python3 "${rtkbase_path}"/tools/nmea.py --file "${rtkbase_path}"/receiver_cfg/LC29HBS_Version.txt /dev/"${com_port}" ${speed} 3 2>/dev/null)"
+            firmware="`echo "$version_str" | cut -d , -f 2`"
+            if [[ -z "$version_str" ]]; then
+              echo "Could not get LC29HBS version string after rebooting the module, try power cycling the module."
+              return 1
+            fi
+            sudo -u "${RTKBASE_USER}" sed -i s/^receiver_firmware=.*/receiver_firmware=\'${firmware}\'/ "${rtkbase_path}"/settings.conf && \
+            sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'921600:8:n:1\'/ "${rtkbase_path}"/settings.conf && \
+            sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Quectel LC29HBS\'/ "${rtkbase_path}"/settings.conf && \
             sudo -u "${RTKBASE_USER}" sed -i s/^receiver_format=.*/receiver_format=\'rtcm3\'/ "${rtkbase_path}"/settings.conf
             #UM980 archives a bigger, we need more remaining space to compress archives
             sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
@@ -665,6 +673,7 @@ start_services() {
   systemctl daemon-reload
   systemctl enable --now rtkbase_web.service
   systemctl enable --now str2str_tcp.service
+  systemctl enable --now configure_gps.service
   systemctl restart gpsd.service
   systemctl restart chrony.service
   systemctl enable --now rtkbase_archive.timer
