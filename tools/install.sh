@@ -579,44 +579,40 @@ configure_gnss(){
             sudo -u "${RTKBASE_USER}" sed -i s/^receiver_format=.*/receiver_format=\'sbf\'/ "${rtkbase_path}"/settings.conf
             #Mosaic-X5 archives a bigger, we need more remaining space to compress archives
             sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
-
-            return $?
           fi
-          elif [[ $(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 2>/dev/null) =~ 'LC29H' ]]; then
-            # Factory reset and configure the module
-            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Factory_Defaults.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
-            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Set_Baud.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
-            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Save.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
-            python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Reboot.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
+          return $?
+        elif [[ $(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 2>/dev/null) =~ 'LC29H' ]]; 
+        then
+          # Factory reset and configure the module
+          python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Factory_Defaults.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
+          python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Set_Baud.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
+          python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Save.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
+          python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Reboot.txt /dev/"${com_port}" ${com_port_settings%%:*} 3 >>"${rtkbase_path}"/logs/LC29H_Configure.log && \
 
-            # Speed has now been configured to 921600
-            speed=921600
-            firmware="LC29HXX"
-            # version_str="$(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${speed} 3 2>/dev/null)"
-            # firmware="`echo "$version_str" | cut -d , -f 2`"
-            # if [[ -z "$version_str" ]]; then
-              # echo "Could not get LC29H version string after rebooting the module, try power cycling the module."
-              # return 1
-            # fi
-            sudo -u "${RTKBASE_USER}" sed -i s/^receiver_firmware=.*/receiver_firmware=\'${firmware}\'/ "${rtkbase_path}"/settings.conf && \
-            sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'921600:8:n:1\'/ "${rtkbase_path}"/settings.conf && \
-            sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Quectel LC29H\'/ "${rtkbase_path}"/settings.conf && \
-            sudo -u "${RTKBASE_USER}" sed -i s/^receiver_format=.*/receiver_format=\'rtcm3\'/ "${rtkbase_path}"/settings.conf
-            #UM980 archives a bigger, we need more remaining space to compress archives
-            sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
+          # Speed has now been configured to 921600
+          speed=921600
+          firmware="LC29HXX"
+          # version_str="$(python3 "${rtkbase_path}"/tools/nmea.py --verbose --file "${rtkbase_path}"/receiver_cfg/LC29H_Version.txt /dev/"${com_port}" ${speed} 3 2>/dev/null)"
+          # firmware="`echo "$version_str" | cut -d , -f 2`"
+          # if [[ -z "$version_str" ]]; then
+            # echo "Could not get LC29H version string after rebooting the module, try power cycling the module."
+            # return 1
+          # fi
+          sudo -u "${RTKBASE_USER}" sed -i s/^receiver_firmware=.*/receiver_firmware=\'${firmware}\'/ "${rtkbase_path}"/settings.conf && \
+          sudo -u "${RTKBASE_USER}" sed -i s/^com_port_settings=.*/com_port_settings=\'921600:8:n:1\'/ "${rtkbase_path}"/settings.conf && \
+          sudo -u "${RTKBASE_USER}" sed -i s/^receiver=.*/receiver=\'Quectel LC29H\'/ "${rtkbase_path}"/settings.conf && \
+          sudo -u "${RTKBASE_USER}" sed -i s/^receiver_format=.*/receiver_format=\'rtcm3\'/ "${rtkbase_path}"/settings.conf
+          #UM980 archives a bigger, we need more remaining space to compress archives
+          sudo -u "${RTKBASE_USER}" sed -i s/^min_free_space=.*/min_free_space=\'1500\'/ "${rtkbase_path}"/settings.conf
 
-            return $?
-            else
-              echo 'Failed to configure the Gnss receiver'
-              return 1
-          fi
-
+          return $?
         else
-          echo 'No Gnss receiver has been set. We can'\''t configure'
-          return 1
+            echo 'Failed to configure the Gnss receiver'
+            return 1
         fi
+
       else
-        echo 'RtkBase is not installed, use option --rtkbase-release'
+        echo 'No Gnss receiver has been set. We can'\''t configure'
         return 1
       fi
 }
